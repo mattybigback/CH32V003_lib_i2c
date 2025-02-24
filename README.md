@@ -12,15 +12,18 @@ on the CH32V003 with the following features:
 * Funcion to Scan the Interface for devices
 * Master Mode Only
 
+## Changelog
+* `v3.4` - Fixed an off-by-one error in i2c_read
+
 ## TODO
 * Test on other MCU Variants:
 	* CH32V003 ✔️
 
 ## Thanks
 Thank you [niansa](https://github.com/niansa) for continued help refining the library  
+Thank you [Johannes JKT](https://github.com/DeadBugEngineering) for fixing an i2c_read off_by_one bug  
 
 If you want to use ANY pins for I2C, see [lib_swi2c](https://github.com/ADBeta/CH32Vxxx_lib_swi2c)
 
 ----
-MIT License
-Copyright (c) 2024 ADBeta
+Copyright (c) 2024 - 2025 ADBeta

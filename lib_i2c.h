@@ -10,10 +10,10 @@
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V000x-lib_i2c
 *
-* 29 Aug 2024	Version 3.3
+* 24 Feb 2025    Ver 3.4
 *
 * Released under the MIT Licence
-* Copyright ADBeta (c) 2024
+* Copyright ADBeta (c) 2024 - 2025
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to
