@@ -119,7 +119,6 @@ i2c_err_t i2c_init(uint32_t clk_rate)
 	// Enable the I2C Peripheral
 	I2C1->CTLR1 |= I2C_CTLR1_PE;
 
-	//TODO:
 	// Check error states
 	if(I2C1->STAR1 & I2C_STAR1_BERR) 
 	{

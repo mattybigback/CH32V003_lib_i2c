@@ -10,7 +10,7 @@
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V000x-lib_i2c
 *
-* 24 Feb 2025    Ver 3.4
+* 22 Mar 2025    Ver 3.5
 *
 * Released under the MIT Licence
 * Copyright ADBeta (c) 2024 - 2025
@@ -35,7 +35,7 @@
 #ifndef CH32_LIB_I2C_H
 #define CH32_LIB_I2C_H
 
-#include "ch32v003fun.h"
+#include "ch32fun.h"
 
 // TESTED: DEFAULT OK	ALT_1 OK
 #define I2C_PINOUT_DEFAULT
@@ -97,7 +97,7 @@ typedef enum {
 
 /*** Functions ***************************************************************/
 /// @brief Initialise the I2C Peripheral on the default pins, in Master Mode
-/// @param clk_rate that the I2C Bus should use in Hz. Max 400000
+/// @param clk_rate that the I2C Bus should use in Hz
 /// @return i2c_err_t, I2C_OK On success
 i2c_err_t i2c_init(const uint32_t clk_rate);
 
