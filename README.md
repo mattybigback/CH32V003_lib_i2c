@@ -1,4 +1,4 @@
-# CH32V003_lib_i2c
+# CH32V003_lib_i2c          Ver 4.3
 **This is a simplified library for I2C, used with [ch32fun](https://github.com/cnlohr/ch32fun)**
 
 ## Library Description
@@ -14,9 +14,14 @@ on the CH32V003 with the following features:
 
 ## Changelog
 * `v3.4` - Fixed an off-by-one error in i2c_read
-* `v3.5` - Converted from ch32v003fun to ch32fun 
+* `v3.5` - Converted from ch32v003fun to ch32fun
+* `v4.0` - Refactored using inlined functions for expandability (i2c_start(), i2c_stop() etc)
+* `v4.1` - Added i2c_wait to simplify waiting for bus to be free
+* `v4.2` - Protected most loops with timeout and error propegation
+* `v4.3` - Began refactor to allow 7bit, 10bit and 16bit addresses. Only supports 7bit currently
 
 ## TODO
+* Add 10bit and 16bit Address Support - need to do lots of research
 * Test on other MCU Variants:
 	* CH32V003 ✔️
 

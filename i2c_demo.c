@@ -1,9 +1,13 @@
 /******************************************************************************
 * Basic Example of using lib_i2c on the CH32V003 Microcontroller
 *
-* Demo Version 1.1    22 Mar 2025
+* Connections:
+* 	SDA -> PC1
+* 	SCL -> PC2
+*
+* Demo Version 2.0    03 May 2025 
 * See GitHub Repo for more information: 
-* https://github.com/ADBeta/CH32V0003-lib_i2c
+* https://github.com/ADBeta/CH32V003_lib_i2c
 *
 * Released under the MIT Licence
 * Copyright ADBeta (c) 2024 - 2025
@@ -21,11 +25,18 @@ void i2c_scan_callback(const uint8_t addr)
 	printf("Address: 0x%02X Responded.\n", addr);
 }
 
-
 int main() 
 {
 	SystemInit();
-	
+
+	// Create a Device Struct - This tells the I2C functions what address type
+	// and value is being used.
+	// In this example, a simple 7bit address is being used
+	i2c_device_t dev = {
+		.type = I2C_ADDR_7BIT,
+		.addr = I2C_ADDR,
+	};
+
 	// Initialise the I2C Interface on the selected pins, at the specified Hz.
 	// Enter a clock speed in Hz (Weirdness happens below 10,000), or use one
 	// of the pre-defined clock speeds:
@@ -49,30 +60,30 @@ int main()
 	i2c_err_t i2c_stat;
 
 	// Write to the -Seconds- Register (Reg 0x00, 0x00 Seconds, one byte)
-	i2c_stat = i2c_write(I2C_ADDR, 0x00, (uint8_t[]){0x00}, 1);
+	i2c_stat = i2c_write_reg(&dev, 0x00, (uint8_t[]){0x00}, 1);
 	if(i2c_stat != I2C_OK) { printf("Error Using the I2C Bus\n"); return -1; }
+
 
 	// Example of writing an array to a register.
 	uint8_t array[3] = {0x00, 0x01, 0x02};
-	i2c_stat = i2c_write(I2C_ADDR, 0x00, array, 3);
+	i2c_stat = i2c_write_reg(&dev, 0x00, array, 3);
 	if(i2c_stat != I2C_OK) { printf("Error Using the I2C Bus\n"); return -1; }
+
 
 	// Example to read from the I2C Device
 	uint8_t seconds = 0;    // Just Seconds (Read as Hex instead od Decimal)
 	uint8_t time[3] = {0};  // Time in Sec, Min, Hrs (Hex not Decimal)
-	
-	// Loop forever
 	while(1)
 	{
 		// Example reading just one byte
-		i2c_stat = i2c_read(I2C_ADDR, 0x00, &seconds, 1);
+		i2c_stat = i2c_read_reg(&dev, 0x00, &seconds, 1);
 		if(i2c_stat != I2C_OK) printf("Error Using the I2C Bus\n");
 		// Print Seconds as a single hex byte
 		printf("Seconds: %02X\n", seconds);
 
 		
 		// Example reading multiple bytes
-		i2c_stat = i2c_read(I2C_ADDR, 0x00, time, 3);
+		i2c_stat = i2c_read_reg(&dev, 0x00, time, 3);
 		if(i2c_stat != I2C_OK) printf("Error Using the I2C Bus\n");
 		// Print Time as Hrs Min Sec
 		printf("Time: %02X:%02X:%02X\n\n", time[2], time[1], time[0]);
@@ -82,5 +93,4 @@ int main()
 		Delay_Ms(1000);
 	}
 
-	return 0;
 }
