@@ -5,7 +5,7 @@
 * 	SDA -> PC1
 * 	SCL -> PC2
 *
-* Demo Version 2.0    03 May 2025 
+* Demo Version 3.0-p    12 July 2025 
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
 *
@@ -29,12 +29,15 @@ int main()
 {
 	SystemInit();
 
+	// NOTE: Please test this multi-byte register stuff
 	// Create a Device Struct - This tells the I2C functions what address type
 	// and value is being used.
 	// In this example, a simple 7bit address is being used
 	i2c_device_t dev = {
+		.clkr = I2C_CLK_400KHZ,
 		.type = I2C_ADDR_7BIT,
 		.addr = I2C_ADDR,
+		.regb = 2,
 	};
 
 	// Initialise the I2C Interface on the selected pins, at the specified Hz.
@@ -42,8 +45,10 @@ int main()
 	// of the pre-defined clock speeds:
 	// I2C_CLK_10KHZ    I2C_CLK_50KHZ    I2C_CLK_100KHZ    I2C_CLK_400KHZ
 	// I2C_CLK_500KHZ   I2C_CLK_600KHZ   I2C_CLK_750KHZ    I2C_CLK_1MHZ
-	if(i2c_init(I2C_CLK_400KHZ) != I2C_OK) printf("Failed to init the I2C Bus\n");
+	if(i2c_init(&dev) != I2C_OK) printf("Failed to init the I2C Bus\n");
 
+
+	/*
 	// Initialising I2C causes the pins to transition from LOW to HIGH.
 	// Wait 100ms to allow the I2C Device to timeout and ignore the transition.
 	// Otherwise, an extra 1-bit will be added to the next transmission
@@ -54,7 +59,7 @@ int main()
 	i2c_scan(i2c_scan_callback);
 	printf("----Done Scanning----\n\n");
 
-	/*** Example ***/
+	*** Example ***
 	// This example is specifically for the DS3231 I2C RTC Module.
 	// Use this as an example for generic devices, changing Address, speed etc
 	i2c_err_t i2c_stat;
@@ -92,5 +97,5 @@ int main()
 		// Wait 1 Second
 		Delay_Ms(1000);
 	}
-
+	*/
 }

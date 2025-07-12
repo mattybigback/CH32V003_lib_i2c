@@ -29,6 +29,12 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
 * USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
+
+// TODO:
+// change log 16bit 10bit address
+// change log register 4 bytes (added reg size in device_t)
+// changed how dev_t works, and init() needs it
+// tidied up
 #include "lib_i2c.h"
 #include <stddef.h>
 
@@ -165,8 +171,12 @@ static inline i2c_err_t i2c_send_addr_read(const i2c_device_t *dev)
 
 
 /*** API Functions ***********************************************************/
-i2c_err_t i2c_init(uint32_t clk_rate)
+i2c_err_t i2c_init(i2c_device_t *dev)
 {
+	// Limit the input regb to between 1-4
+	if(dev->regb == 0) dev->regb = 1;
+	if(dev->regb  > 4) dev->regb = 4;
+
 	// Toggle the I2C Reset bit to init Registers
 	RCC->APB1PRSTR |=  RCC_APB1Periph_I2C1;
 	RCC->APB1PRSTR &= ~RCC_APB1Periph_I2C1;
@@ -193,12 +203,12 @@ i2c_err_t i2c_init(uint32_t clk_rate)
 	I2C1->CTLR2 = i2c_conf;
 
 	// Set I2C Clock
-	if(clk_rate <= 100000)
+	if(dev->clkr <= 100000)
 	{
-		i2c_conf = (FUNCONF_SYSTEM_CORE_CLOCK / (2 * clk_rate)) & I2C_CKCFGR_CCR;
+		i2c_conf = (FUNCONF_SYSTEM_CORE_CLOCK / (2 * dev->clkr)) & I2C_CKCFGR_CCR;
 	} else {
 		// Fast mode. Default to 33% Duty Cycle
-		i2c_conf = (FUNCONF_SYSTEM_CORE_CLOCK / (3 * clk_rate)) & I2C_CKCFGR_CCR;
+		i2c_conf = (FUNCONF_SYSTEM_CORE_CLOCK / (3 * dev->clkr)) & I2C_CKCFGR_CCR;
 		i2c_conf |= I2C_CKCFGR_FS;
 	}
 	I2C1->CKCFGR = i2c_conf;
@@ -211,7 +221,6 @@ i2c_err_t i2c_init(uint32_t clk_rate)
 }
 
 
-// TODO: impliment 10b and 16b address
 i2c_err_t i2c_ping(const uint8_t addr)
 {
 	// Create a temporary i2c device using passed addr
@@ -243,9 +252,9 @@ void i2c_scan(void (*callback)(const uint8_t))
 }
 
 
-i2c_err_t i2c_read_reg(const i2c_device_t *dev,		const uint8_t reg,
-													uint8_t *buf,
-													const uint8_t len)
+i2c_err_t i2c_read_reg(const i2c_device_t *dev,     const uint32_t reg,
+                                                    uint8_t *buf,
+                                                    const size_t len)
 {
 	// Wait for the I2C Bus to be Available
 	i2c_err_t i2c_ret = i2c_wait();
@@ -253,8 +262,20 @@ i2c_err_t i2c_read_reg(const i2c_device_t *dev,		const uint8_t reg,
 	// Start the I2C Bus and send the Write Address byte
 	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
 
-	// Select the register and enter read mode
-	if(i2c_ret == I2C_OK) { I2C1->DATAR = reg; I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_TXE), i2c_ret); }
+	// Send the register byte/s - MSBFirst
+	if(i2c_ret == I2C_OK)
+	{
+		for(int8_t b = dev->regb - 1; b >= 0; b--)
+		{
+			uint8_t reg_byte = (reg >> (8 * b)) & 0xFF;
+			I2C1->DATAR = reg_byte;
+
+			I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_TXE), i2c_ret);
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) break;
+		}
+	}
+
+	// Enter Read Mode
 	if(i2c_ret == I2C_OK)
 	{
 		// If the message is long enough, enable ACK messages
@@ -292,17 +313,28 @@ i2c_err_t i2c_read_reg(const i2c_device_t *dev,		const uint8_t reg,
 }
 
 
-i2c_err_t i2c_write_reg(const i2c_device_t *dev,	const uint8_t reg,
-													const uint8_t *buf,
-													const uint8_t len)
+i2c_err_t i2c_write_reg(const i2c_device_t *dev,    const uint32_t reg,
+                                                    const uint8_t *buf,
+                                                    const size_t len)
 {
 	// Wait for the I2C Bus the be Available
 	i2c_err_t i2c_ret = i2c_wait();
 
 	// Start the I2C Bus and send the Write Address byte
 	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
-	// Send the Register Byte
-	if(i2c_ret == I2C_OK) { I2C1->DATAR = reg; I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_TXE), i2c_ret); }
+
+	// Send the register byte/s - MSBFirst
+	if(i2c_ret == I2C_OK)
+	{
+		for(int8_t b = dev->regb - 1; b >= 0; b--)
+		{
+			uint8_t reg_byte = (reg >> (8 * b)) & 0xFF;
+			I2C1->DATAR = reg_byte;
+
+			I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_TXE), i2c_ret);
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) break;
+		}
+	}
 
 	// Select the register and write the data
 	if(i2c_ret == I2C_OK)

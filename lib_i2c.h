@@ -7,7 +7,7 @@
 * Alt 1:	SCL = PD1		SDA = PD0
 * Alt 2:	SCL = PC5		SDA = PC6
 *
-* Version 4.3    03 May 2025
+* Version 5.0.0    12 July 2025
 *
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
@@ -36,7 +36,8 @@
 
 #include "ch32fun.h"
 
-// TESTED: DEFAULT OK	ALT_1 OK
+#include <stddef.h>
+
 #define I2C_PINOUT_DEFAULT
 //#define I2C_PINOUT_ALT_1
 //#define I2C_PINOUT_ALT_2
@@ -86,11 +87,11 @@
 /*** Types and Enums *********************************************************/
 /// @brief I2C Error Codes
 typedef enum {
-	I2C_OK	  = 0,  // No Error. All OK
+	I2C_OK	  = 0,   // No Error. All OK
 	I2C_ERR_BERR,	 // Bus Error
 	I2C_ERR_NACK,	 // ACK Bit failed
 	I2C_ERR_ARLO,	 // Arbitration Lost
-	I2C_ERR_OVR,	  // Overun/underrun condition
+	I2C_ERR_OVR,	 // Overun/underrun condition
 	I2C_ERR_BUSY,	 // Bus was busy and timed out
 } i2c_err_t;
 
@@ -107,16 +108,18 @@ typedef enum {
 
 
 typedef struct {
+	uint32_t      clkr;  // Clock Rate (in Hz)
 	i2c_addr_t    type;  // Address Type - Determines address behaviour
 	uint16_t      addr;  // Address Value. Default is WRITE in 7 and 10bit
+	uint8_t       regb;  // Register Bytes 1-4 (Capped to sane range in in init())
 } i2c_device_t;
 
 
 /*** Functions ***************************************************************/
 /// @brief Initialise the I2C Peripheral on the default pins, in Master Mode
-/// @param clk_rate that the I2C Bus should use in Hz
+/// @param i2c_dev_t device config - for clock speed, and limits values
 /// @return i2c_err_t, I2C_OK On success
-i2c_err_t i2c_init(const uint32_t clk_rate);
+i2c_err_t i2c_init(i2c_device_t *dev);
 
 /// @brief Pings a specific I2C Address, and returns a i2c_err_t status
 /// @param addr I2C Device Address,                    NOTE: 7BIT ADDRESS ONLY
@@ -135,13 +138,13 @@ void i2c_scan(void (*callback)(const uint8_t));
 
 /// @brief reads [len] bytes from [addr]s [reg] register into [buf]
 /// @param dev, I2C Device to Read from
-/// @param reg, register to read from
+/// @param reg, register to read from - up to 4 bytes
 /// @param buf, buffer to read to
 /// @param len, number of bytes to read
 /// @return 12c_err_t. I2C_OK on Success
-i2c_err_t i2c_read_reg(const i2c_device_t *dev,		const uint8_t reg,
-													uint8_t *buf,
-													const uint8_t len);
+i2c_err_t i2c_read_reg(const i2c_device_t *dev,     const uint32_t reg,
+                                                    uint8_t *buf,
+                                                    const size_t len);
 
 
 /// @brief writes [len] bytes from [buf], to the [reg] of [addr]
@@ -150,8 +153,8 @@ i2c_err_t i2c_read_reg(const i2c_device_t *dev,		const uint8_t reg,
 /// @param buf, Buffer to write from
 /// @param len, number of bytes to read
 /// @return i2c_err_t. I2C_OK On Success.
-i2c_err_t i2c_write_reg(const i2c_device_t *dev,	const uint8_t reg,
-													const uint8_t *buf,
-													const uint8_t len);
+i2c_err_t i2c_write_reg(const i2c_device_t *dev,    const uint32_t reg,
+                                                    const uint8_t *buf,
+                                                    const size_t len);
 
 #endif
