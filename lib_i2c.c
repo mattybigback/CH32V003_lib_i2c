@@ -29,12 +29,6 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
 * USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
-
-// TODO:
-// change log 16bit 10bit address
-// change log register 4 bytes (added reg size in device_t)
-// changed how dev_t works, and init() needs it
-// tidied up
 #include "lib_i2c.h"
 #include <stddef.h>
 

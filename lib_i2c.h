@@ -7,7 +7,7 @@
 * Alt 1:	SCL = PD1		SDA = PD0
 * Alt 2:	SCL = PC5		SDA = PC6
 *
-* Version 5.0.0    12 July 2025
+* Version 5.0    12 July 2025
 *
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
