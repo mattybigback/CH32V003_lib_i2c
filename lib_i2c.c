@@ -246,6 +246,91 @@ void i2c_scan(void (*callback)(const uint8_t))
 }
 
 
+i2c_err_t i2c_read_raw(const i2c_device_t *dev,     uint8_t *buf,
+                                                    const size_t len)
+{
+	// Wait for the I2C Bus to be Available
+	i2c_err_t i2c_ret = i2c_wait();
+	
+	// Start the I2C Bus and send the Write Address byte
+	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
+
+	// Enter Read Mode
+	if(i2c_ret == I2C_OK)
+	{
+		// If the message is long enough, enable ACK messages
+		if(len > 1) I2C1->CTLR1 |= I2C_CTLR1_ACK;
+
+		// Send a Repeated START and send the Read Address
+		i2c_start();
+		i2c_ret = i2c_send_addr_read(dev);
+	}
+
+	// Read the data from the bus
+	if(i2c_ret == I2C_OK)
+	{
+		uint8_t cbyte = 0;
+		while(cbyte < len)
+		{
+			// If this is the last byte, send the NACK Bit
+			if(cbyte == len - 1) I2C1->CTLR1 &= ~I2C_CTLR1_ACK;
+
+			// Wait until there is data (Read Register Not Empty)
+			I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_RXNE), i2c_ret);
+			//while(!(I2C1->STAR1 & I2C_STAR1_RXNE));
+			buf[cbyte] = I2C1->DATAR;
+			++cbyte;
+
+			// Make sure no errors occured for this byte
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) break;
+		}
+	}
+
+	// Signal a STOP
+	i2c_stop();
+
+	return i2c_ret;
+}
+
+
+i2c_err_t i2c_write_raw(const i2c_device_t *dev,    const uint8_t *buf,
+                                                    const size_t len)
+{
+	// Wait for the I2C Bus the be Available
+	i2c_err_t i2c_ret = i2c_wait();
+
+	// Start the I2C Bus and send the Write Address byte
+	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
+
+	// Write the data
+	if(i2c_ret == I2C_OK)
+	{
+		uint8_t cbyte = 0;
+		while(cbyte < len)
+		{
+			// Write the byte and wait for it to finish transmitting
+			I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_TXE), i2c_ret);
+			//while(!(I2C1->STAR1 & I2C_STAR1_TXE));
+			I2C1->DATAR = buf[cbyte];
+			++cbyte;
+
+			// Make sure no errors occured for this byte
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) break;
+		}
+	}
+
+	// Wait for the bus to finish transmitting
+	I2C_TIMEOUT_WAIT_FOR(!i2c_status(I2C_EVENT_MASTER_BYTE_TRANSMITTED), i2c_ret);
+	// Signal a STOP
+	i2c_stop();
+
+	return i2c_ret;
+
+
+
+}
+
+
 i2c_err_t i2c_read_reg(const i2c_device_t *dev,     const uint32_t reg,
                                                     uint8_t *buf,
                                                     const size_t len)
@@ -330,7 +415,7 @@ i2c_err_t i2c_write_reg(const i2c_device_t *dev,    const uint32_t reg,
 		}
 	}
 
-	// Select the register and write the data
+	// Write the data
 	if(i2c_ret == I2C_OK)
 	{
 		uint8_t cbyte = 0;

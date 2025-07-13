@@ -30,23 +30,32 @@ int main()
 	SystemInit();
 
 	// NOTE: Please test this multi-byte register stuff
-	// Create a Device Struct 
-	// Clock Speed in Hz
-	// I2C Address type (only 7bit supported currently
-	// Use the address defined above
-	// The Register/Command portion of comms is 2 bytes
+	// Create a Device Struct - This tells the I2C functions what address type
+	// and value is being used.
+	// In this example, a simple 7bit address is being used
 	i2c_device_t dev = {
 		.clkr = I2C_CLK_400KHZ,
 		.type = I2C_ADDR_7BIT,
 		.addr = I2C_ADDR,
-		.regb = 2,
+		.regb = 1,
 	};
 
-	// Initialise the I2C Interface for this device
+	// Initialise the I2C Interface on the selected pins, at the specified Hz.
+	// Enter a clock speed in Hz (Weirdness happens below 10,000), or use one
+	// of the pre-defined clock speeds:
+	// I2C_CLK_10KHZ    I2C_CLK_50KHZ    I2C_CLK_100KHZ    I2C_CLK_400KHZ
+	// I2C_CLK_500KHZ   I2C_CLK_600KHZ   I2C_CLK_750KHZ    I2C_CLK_1MHZ
 	if(i2c_init(&dev) != I2C_OK) printf("Failed to init the I2C Bus\n");
 
+	while(1)
+	{
+		uint8_t array[4] = {0xDE, 0xAD, 0xBE, 0xEF};
+		i2c_write_reg(&dev, 0x04030201, array, 4);
 
-	// NOTE: Removed for prototype testing
+		Delay_Ms(1000);
+	}
+
+
 	/*
 	// Initialising I2C causes the pins to transition from LOW to HIGH.
 	// Wait 100ms to allow the I2C Device to timeout and ignore the transition.

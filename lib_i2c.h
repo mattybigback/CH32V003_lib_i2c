@@ -121,10 +121,12 @@ typedef struct {
 /// @return i2c_err_t, I2C_OK On success
 i2c_err_t i2c_init(i2c_device_t *dev);
 
+
 /// @brief Pings a specific I2C Address, and returns a i2c_err_t status
 /// @param addr I2C Device Address,                    NOTE: 7BIT ADDRESS ONLY
 /// @return i2c_err_t, I2C_OK if the device responds
 i2c_err_t i2c_ping(const uint8_t addr);
+
 
 /// @brief Scans through all 7 Bit addresses, prints any that respond
 /// @param callback function - returns void, takes uint8_t
@@ -133,8 +135,23 @@ i2c_err_t i2c_ping(const uint8_t addr);
 void i2c_scan(void (*callback)(const uint8_t));
 
 
+/// @brief reads [len] bytes from the I2C Device into [buf]
+/// @param dev, I2C Device to Read from
+/// @param buf, buffer to read to
+/// @param len, number of bytes to read
+/// @return 12c_err_t. I2C_OK on Success
+i2c_err_t i2c_read_raw(const i2c_device_t *dev,     uint8_t *buf,
+                                                    const size_t len);
 
-// TODO: read/write raw
+
+/// @brief writes [len] bytes from [buf], to the I2C Device
+/// @param dev, I2C Device to Write to
+/// @param buf, Buffer to write from
+/// @param len, number of bytes to write
+/// @return i2c_err_t. I2C_OK On Success.
+i2c_err_t i2c_write_raw(const i2c_device_t *dev,    const uint8_t *buf,
+                                                    const size_t len);
+
 
 /// @brief reads [len] bytes from [addr]s [reg] register into [buf]
 /// @param dev, I2C Device to Read from
@@ -151,7 +168,7 @@ i2c_err_t i2c_read_reg(const i2c_device_t *dev,     const uint32_t reg,
 /// @param dev, I2C Device to Write to
 /// @param reg, register to write to
 /// @param buf, Buffer to write from
-/// @param len, number of bytes to read
+/// @param len, number of bytes to write
 /// @return i2c_err_t. I2C_OK On Success.
 i2c_err_t i2c_write_reg(const i2c_device_t *dev,    const uint32_t reg,
                                                     const uint8_t *buf,
