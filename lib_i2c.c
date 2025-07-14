@@ -32,9 +32,16 @@
 #include "lib_i2c.h"
 #include <stddef.h>
 
+/*** Static Types ************************************************************/
+typedef enum {
+	I2C_READ   = 0x00,
+	I2C_WRITE  = 0x01
+} i2c_addr_rw_t;
+
+
 /*** Static Variables ********************************************************/
 /// @brief Timeout variable. Set and decrimented in functions
-static int32_t _i2c_timeout = 0;
+static uint32_t _i2c_timeout = 0;
 
 
 /*** Macro Functions *********************************************************/
@@ -42,7 +49,7 @@ static int32_t _i2c_timeout = 0;
 do { \
 	_i2c_timeout = I2C_TIMEOUT; \
 	while((condition)) \
-		if(--_i2c_timeout <= 0) {(err_var) = i2c_get_busy_error(); break;} \
+		if(_i2c_timeout-- == 0) {(err_var) = i2c_get_busy_error(); break;} \
 } while(0)
 
 
@@ -122,44 +129,49 @@ static inline void i2c_stop()
 }
 
 
-/// @brief Sends the Address Byte(s) to the I2C Device in Write mode
-/// @param i2c_dev_t device to address
-/// @return i2c_err_r error status. I2C_OK on success
-static inline i2c_err_t i2c_send_addr_write(const i2c_device_t *dev)
+static i2c_err_t i2c_send_addr(const i2c_addr_rw_t rw, const i2c_device_t *dev)
 {
 	i2c_err_t i2c_ret = I2C_OK;
 	
 	if(dev->type == I2C_ADDR_7BIT)
 	{
-		// Send the Address and wait for it to finish transmitting
-		I2C1->DATAR = (dev->addr << 1) & 0xFE;
-		I2C_TIMEOUT_WAIT_FOR(!i2c_status(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED), i2c_ret);
+		uint8_t addr_7b = (dev->addr << 1);
+		if(rw == I2C_WRITE)
+		{
+			I2C1->DATAR = addr_7b & 0xFE;
+			I2C_TIMEOUT_WAIT_FOR(!i2c_status(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED), i2c_ret);
+		}
+
+		if(rw == I2C_READ)
+		{
+			I2C1->DATAR = addr_7b | 0x01;
+			I2C_TIMEOUT_WAIT_FOR(!i2c_status(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED), i2c_ret);
+		}
 	}
 
-/*
 	if(dev->type == I2C_ADDR_10BIT)
 	{
-		uint8_t upper = 0xF0 | ((dev->addr & 0x0300) >> 7);
-		uint8_t lower = dev->addr & 0xFF;
+		uint8_t addr_10b_u = 0xF0 | ((dev->addr >> 7) & 0x06);
+		uint8_t addr_10b_l = dev->addr & 0xFF;
+		if(rw == I2C_WRITE)
+		{
+			I2C1->DATAR = addr_10b_u;
+			I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_ADD10), i2c_ret);
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) return i2c_ret;
+
+			I2C1->DATAR = addr_10b_l;
+			I2C_TIMEOUT_WAIT_FOR(!i2c_status(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED), i2c_ret);
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) return i2c_ret;
+		}
+
+		if(rw == I2C_READ)
+		{
+			I2C1->DATAR = addr_10b_u | 0x01;
+			I2C_TIMEOUT_WAIT_FOR(!i2c_status(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED), i2c_ret);
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) return i2c_ret;
+		}
 	}
-*/
-	return i2c_ret;
-}
 
-
-/// @brief Sends the Address Byte(s) to the I2C Device in Read mode
-/// @param i2c_dev_t device to address
-/// @return i2c_err_r error status. I2C_OK on success
-static inline i2c_err_t i2c_send_addr_read(const i2c_device_t *dev)
-{
-	i2c_err_t i2c_ret = I2C_OK;
-
-	if(dev->type == I2C_ADDR_7BIT)
-	{
-		// Send the Address and wait for it to finish transmitting
-		I2C1->DATAR = (dev->addr << 1) | 0x01;
-		I2C_TIMEOUT_WAIT_FOR(!i2c_status(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED), i2c_ret);
-	}
 	return i2c_ret;
 }
 
@@ -225,7 +237,7 @@ i2c_err_t i2c_ping(const uint8_t addr)
 
 	// Send the address and get the status
 	i2c_start();
-	if(i2c_ret == I2C_OK) i2c_ret = i2c_send_addr_write(&tmp_dev);
+	if(i2c_ret == I2C_OK) i2c_ret = i2c_send_addr(I2C_WRITE, &tmp_dev);
 
 	// Signal a STOP
 	i2c_stop();
@@ -253,7 +265,7 @@ i2c_err_t i2c_read_raw(const i2c_device_t *dev,     uint8_t *buf,
 	i2c_err_t i2c_ret = i2c_wait();
 	
 	// Start the I2C Bus and send the Write Address byte
-	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
+	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr(I2C_WRITE, dev); }
 
 	// Enter Read Mode
 	if(i2c_ret == I2C_OK)
@@ -263,7 +275,7 @@ i2c_err_t i2c_read_raw(const i2c_device_t *dev,     uint8_t *buf,
 
 		// Send a Repeated START and send the Read Address
 		i2c_start();
-		i2c_ret = i2c_send_addr_read(dev);
+		i2c_ret = i2c_send_addr(I2C_READ, dev);
 	}
 
 	// Read the data from the bus
@@ -300,7 +312,7 @@ i2c_err_t i2c_write_raw(const i2c_device_t *dev,    const uint8_t *buf,
 	i2c_err_t i2c_ret = i2c_wait();
 
 	// Start the I2C Bus and send the Write Address byte
-	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
+	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr(I2C_WRITE, dev); }
 
 	// Write the data
 	if(i2c_ret == I2C_OK)
@@ -339,7 +351,7 @@ i2c_err_t i2c_read_reg(const i2c_device_t *dev,     const uint32_t reg,
 	i2c_err_t i2c_ret = i2c_wait();
 	
 	// Start the I2C Bus and send the Write Address byte
-	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
+	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr(I2C_WRITE, dev); }
 
 	// Send the register byte/s - MSBFirst
 	if(i2c_ret == I2C_OK)
@@ -362,7 +374,7 @@ i2c_err_t i2c_read_reg(const i2c_device_t *dev,     const uint32_t reg,
 
 		// Send a Repeated START and send the Read Address
 		i2c_start();
-		i2c_ret = i2c_send_addr_read(dev);
+		i2c_ret = i2c_send_addr(I2C_READ, dev);
 	}
 
 	// Read the data from the bus
@@ -400,7 +412,7 @@ i2c_err_t i2c_write_reg(const i2c_device_t *dev,    const uint32_t reg,
 	i2c_err_t i2c_ret = i2c_wait();
 
 	// Start the I2C Bus and send the Write Address byte
-	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr_write(dev); }
+	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr(I2C_WRITE, dev); }
 
 	// Send the register byte/s - MSBFirst
 	if(i2c_ret == I2C_OK)

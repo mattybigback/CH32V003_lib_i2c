@@ -7,7 +7,7 @@
 * Alt 1:	SCL = PD1		SDA = PD0
 * Alt 2:	SCL = PC5		SDA = PC6
 *
-* Version 5.0    12 July 2025
+* Version 5.2    14 July 2025
 *
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
@@ -55,7 +55,7 @@
 
 // Hardware CLK Prerate and timeout
 #define I2C_PRERATE       1000000
-#define I2C_TIMEOUT       2000
+#define I2C_TIMEOUT       4000
 
 // Default Pinout
 #ifdef I2C_PINOUT_DEFAULT
@@ -102,7 +102,7 @@ typedef enum {
 /// 16bit Mode sends the Address raw as 2 bytes to support some devices
 typedef enum {
 	I2C_ADDR_7BIT     = 0,
-//	I2C_ADDR_10BIT,
+	I2C_ADDR_10BIT,
 //	I2C_ADDR_16BIT
 } i2c_addr_t;
 

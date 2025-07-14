@@ -15,6 +15,8 @@ Based on [CNLohr's ch32fun](https://github.com/cnlohr/ch32fun)
 
 
 ## Changelog
+* `v5.2` - Refactored a few things to be more efficient, added support for 10Bit
+           Addresses
 * `v5.0` - Added Multi-Byte Register support (up to 4 bytes) with config in i2c_device_t  
            Changed init() to use the device pointer, multiple devices can still be used at once  
            Added read & write raw functions - without use of registers

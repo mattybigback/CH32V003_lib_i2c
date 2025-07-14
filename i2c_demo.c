@@ -47,11 +47,13 @@ int main()
 	// I2C_CLK_500KHZ   I2C_CLK_600KHZ   I2C_CLK_750KHZ    I2C_CLK_1MHZ
 	if(i2c_init(&dev) != I2C_OK) printf("Failed to init the I2C Bus\n");
 
+
+	uint8_t buf[4] = {0x00};
 	while(1)
 	{
-		uint8_t array[4] = {0xDE, 0xAD, 0xBE, 0xEF};
-		i2c_write_reg(&dev, 0x04030201, array, 4);
+		i2c_err_t ret = i2c_read_reg(&dev, 0x00, buf, 4);
 
+		printf("err: %d\n", (uint8_t)ret);
 		Delay_Ms(1000);
 	}
 
