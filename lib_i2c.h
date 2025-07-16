@@ -7,12 +7,10 @@
 * Alt 1:	SCL = PD1		SDA = PD0
 * Alt 2:	SCL = PC5		SDA = PC6
 *
-* Version 5.2    14 July 2025
+* Version 5.2    16 July 2025
 *
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
-* Released under the MIT Licence
-* Copyright ADBeta (c) 2024 - 2025
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to
@@ -30,6 +28,9 @@
 * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
 * USE OR OTHER DEALINGS IN THE SOFTWARE.
+*
+* Released under the MIT Licence
+* Copyright ADBeta (c) 2024 - 2025
 ******************************************************************************/
 #ifndef CH32_LIB_I2C_H
 #define CH32_LIB_I2C_H
@@ -38,9 +39,10 @@
 
 #include <stddef.h>
 
-#define I2C_PINOUT_DEFAULT
-//#define I2C_PINOUT_ALT_1
-//#define I2C_PINOUT_ALT_2
+// If the user has not defined an I2C Pinout, set the default option
+#if !defined(I2C_PINOUT_DEFAULT) && !defined(I2C_PINOUT_ALT_1) && !defined(I2C_PINOUT_ALT_2)
+	#define I2C_PINOUT_DEFAULT
+#endif
 
 /*** Hardware Definitions ****************************************************/
 // Predefined Clock Speeds

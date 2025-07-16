@@ -1,4 +1,4 @@
-# CH32V003_lib_i2c          Ver 5.x Prototype
+# CH32V003_lib_i2c          Ver 5.2
 
 ## Library Description
 `lib_i2c` is a fully featured, but lightweight library for the I2C peripheral
@@ -15,7 +15,8 @@ Based on [CNLohr's ch32fun](https://github.com/cnlohr/ch32fun)
 
 
 ## Changelog
-* `v5.2` - Refactored a few things to be more efficient, added support for 10Bit
+* `v5.2` - Fixed a define bug in the header - Testing complete of multi-byte registers
+* `v5.1` - Refactored a few things to be more efficient, added support for 10Bit
            Addresses
 * `v5.0` - Added Multi-Byte Register support (up to 4 bytes) with config in i2c_device_t  
            Changed init() to use the device pointer, multiple devices can still be used at once  
@@ -29,7 +30,6 @@ Based on [CNLohr's ch32fun](https://github.com/cnlohr/ch32fun)
 
 
 ## TODO
-* Add 10bit and 16bit Address Support - need to do lots of research
 * Test on other MCU Variants:
 	* CH32V003 ✔️
 

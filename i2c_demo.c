@@ -1,13 +1,31 @@
 /******************************************************************************
 * Basic Example of using lib_i2c on the CH32V003 Microcontroller
 *
-* Connections:
-* 	SDA -> PC1
-* 	SCL -> PC2
 *
-* Demo Version 3.0-p    12 July 2025 
+* Demo Version 3.1    16 July 2025 
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
+*
+*
+* Notes:
+* When selecting a Clock Speed (on the CH32V003), Values between 10KHz and 1MHz
+* work reliably and consistently. Values outside of this range can be sketchy
+* 
+* Alternatively, use one of the pre-defined Clock Speeds:
+* I2C_CLK_10KHZ    I2C_CLK_50KHZ    I2C_CLK_100KHZ    I2C_CLK_400KHZ
+* I2C_CLK_500KHZ   I2C_CLK_600KHZ   I2C_CLK_750KHZ    I2C_CLK_1MHZ
+*
+*
+* To select the HW Pins used by the I2C Device is done via defining one of the
+* following options - BEFORE THE HEADER IS INCLUDED.
+* WARN: The best place to do this is in funconfig.h
+*
+* #define I2C_PINOUT_DEFAULT       SCL = PC2    SDA = PC1
+* #define I2C_PINOUT_ALT_1         SCL = PD1    SDA = PD0
+* #define I2C_PINOUT_ALT_2         SCL = PC5    SDA = PC6
+*
+*
+* Read lib_i2c.h for documentation on each function and how to use them
 *
 * Released under the MIT Licence
 * Copyright ADBeta (c) 2024 - 2025
@@ -17,7 +35,6 @@
 
 #include <stdio.h>
 
-#define I2C_ADDR 0x68
 
 // I2C Scan Callback example function. Prints the address which responded
 void i2c_scan_callback(const uint8_t addr)
@@ -25,40 +42,27 @@ void i2c_scan_callback(const uint8_t addr)
 	printf("Address: 0x%02X Responded.\n", addr);
 }
 
+
 int main() 
 {
 	SystemInit();
 
-	// NOTE: Please test this multi-byte register stuff
-	// Create a Device Struct - This tells the I2C functions what address type
-	// and value is being used.
-	// In this example, a simple 7bit address is being used
+	// Create an I2C Device Struct. This defines the I2C
+	// * Clock Speed
+	// * Address Type                 (7bit or 10bit)
+	// * Address Value                (1 Byte for 7bit, 2 Bytes for 10bit)
+	// * Register Bytes               (1, 2, 3 & 4 bytes supported)
+	// NOTE: This demo example is using a DS3231 RTC
 	i2c_device_t dev = {
 		.clkr = I2C_CLK_400KHZ,
-		.type = I2C_ADDR_7BIT,
-		.addr = I2C_ADDR,
+		.type = I2C_ADDR_10BIT,
+		.addr = 0x68,
 		.regb = 1,
 	};
 
-	// Initialise the I2C Interface on the selected pins, at the specified Hz.
-	// Enter a clock speed in Hz (Weirdness happens below 10,000), or use one
-	// of the pre-defined clock speeds:
-	// I2C_CLK_10KHZ    I2C_CLK_50KHZ    I2C_CLK_100KHZ    I2C_CLK_400KHZ
-	// I2C_CLK_500KHZ   I2C_CLK_600KHZ   I2C_CLK_750KHZ    I2C_CLK_1MHZ
+	// Initialise the I2C Interface
 	if(i2c_init(&dev) != I2C_OK) printf("Failed to init the I2C Bus\n");
 
-
-	uint8_t buf[4] = {0x00};
-	while(1)
-	{
-		i2c_err_t ret = i2c_read_reg(&dev, 0x00, buf, 4);
-
-		printf("err: %d\n", (uint8_t)ret);
-		Delay_Ms(1000);
-	}
-
-
-	/*
 	// Initialising I2C causes the pins to transition from LOW to HIGH.
 	// Wait 100ms to allow the I2C Device to timeout and ignore the transition.
 	// Otherwise, an extra 1-bit will be added to the next transmission
@@ -69,12 +73,11 @@ int main()
 	i2c_scan(i2c_scan_callback);
 	printf("----Done Scanning----\n\n");
 
-	*** Example ***
-	// This example is specifically for the DS3231 I2C RTC Module.
-	// Use this as an example for generic devices, changing Address, speed etc
+	
+	// Keep track of the error status to debug issues.
 	i2c_err_t i2c_stat;
 
-	// Write to the -Seconds- Register (Reg 0x00, 0x00 Seconds, one byte)
+	// Write to the -Seconds- Register (Reg 0x00, 0x00 Seconds)
 	i2c_stat = i2c_write_reg(&dev, 0x00, (uint8_t[]){0x00}, 1);
 	if(i2c_stat != I2C_OK) { printf("Error Using the I2C Bus\n"); return -1; }
 
@@ -107,5 +110,4 @@ int main()
 		// Wait 1 Second
 		Delay_Ms(1000);
 	}
-	*/
 }

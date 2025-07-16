@@ -9,8 +9,6 @@
 *
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
-* Released under the MIT Licence
-* Copyright ADBeta (c) 2024 - 2025
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to
@@ -28,6 +26,9 @@
 * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR 
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE 
 * USE OR OTHER DEALINGS IN THE SOFTWARE.
+*
+* Released under the MIT Licence
+* Copyright ADBeta (c) 2024 - 2025
 ******************************************************************************/
 #include "lib_i2c.h"
 #include <stddef.h>
