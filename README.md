@@ -1,4 +1,4 @@
-# CH32V003_lib_i2c          Ver 5.2
+# CH32V003_lib_i2c          Ver 5.4
 
 ## Library Description
 `lib_i2c` is a fully featured, but lightweight library for the I2C peripheral
@@ -15,6 +15,8 @@ Based on [CNLohr's ch32fun](https://github.com/cnlohr/ch32fun)
 
 
 ## Changelog
+* `v5.4` - Added a `read_reg_delay()` function for when clock-stretching is inadequate
+* `v5.3` - Added an easier user-definable clock-stretch timout variable
 * `v5.2` - Fixed a define bug in the header - Testing complete of multi-byte registers
 * `v5.1` - Refactored a few things to be more efficient, added support for 10Bit
            Addresses
@@ -30,6 +32,7 @@ Based on [CNLohr's ch32fun](https://github.com/cnlohr/ch32fun)
 
 
 ## TODO
+* Neaten library so there are less repeated chunks of code
 * Test on other MCU Variants:
 	* CH32V003 ✔️
 

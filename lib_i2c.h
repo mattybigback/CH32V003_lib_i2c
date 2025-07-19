@@ -7,7 +7,7 @@
 * Alt 1:	SCL = PD1		SDA = PD0
 * Alt 2:	SCL = PC5		SDA = PC6
 *
-* Version 5.2    16 July 2025
+* Version 5.4    19 July 2025
 *
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
@@ -36,7 +36,6 @@
 #define CH32_LIB_I2C_H
 
 #include "ch32fun.h"
-
 #include <stddef.h>
 
 // If the user has not defined an I2C Pinout, set the default option
@@ -57,7 +56,6 @@
 
 // Hardware CLK Prerate and timeout
 #define I2C_PRERATE       1000000
-#define I2C_TIMEOUT       4000
 
 // Default Pinout
 #ifdef I2C_PINOUT_DEFAULT
@@ -114,6 +112,7 @@ typedef struct {
 	i2c_addr_t    type;  // Address Type - Determines address behaviour
 	uint16_t      addr;  // Address Value. Default is WRITE in 7 and 10bit
 	uint8_t       regb;  // Register Bytes 1-4 (Capped to sane range in in init())
+	uint32_t      tout;  // Number of cycles before the master timesout. Useful for clock-stretch
 } i2c_device_t;
 
 
@@ -175,5 +174,20 @@ i2c_err_t i2c_read_reg(const i2c_device_t *dev,     const uint32_t reg,
 i2c_err_t i2c_write_reg(const i2c_device_t *dev,    const uint32_t reg,
                                                     const uint8_t *buf,
                                                     const size_t len);
+
+
+/// @brief reads [len] bytes from [addr]s [reg] register into [buf]
+/// Adds a small delay after sending the register byte(s) before reading
+/// @param dev, I2C Device to Read from
+/// @param reg, register to read from - up to 4 bytes
+/// @param buf, buffer to read to
+/// @param len, number of bytes to read
+/// NOTE: Delay is handled via Delay_Ms() so ch32fun is required
+/// @param delay. number of milliseconds to wait before reading data
+/// @return 12c_err_t. I2C_OK on Success
+i2c_err_t i2c_read_reg_delay(const i2c_device_t *dev,     const uint32_t reg,
+                                                          uint8_t *buf,
+                                                          const size_t len,
+					                                      const size_t delay);
 
 #endif

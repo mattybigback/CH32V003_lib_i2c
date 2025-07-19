@@ -31,6 +31,7 @@
 * Copyright ADBeta (c) 2024 - 2025
 ******************************************************************************/
 #include "lib_i2c.h"
+#include "ch32fun.h"
 #include <stddef.h>
 
 /*** Static Types ************************************************************/
@@ -41,16 +42,17 @@ typedef enum {
 
 
 /*** Static Variables ********************************************************/
-/// @brief Timeout variable. Set and decrimented in functions
+/// @brief This variable is set by init() and defines how many cycles to wait
+/// before a timeout is triggered
 static uint32_t _i2c_timeout = 0;
 
 
 /*** Macro Functions *********************************************************/
 #define I2C_TIMEOUT_WAIT_FOR(condition, err_var) \
 do { \
-	_i2c_timeout = I2C_TIMEOUT; \
+	uint32_t to = _i2c_timeout; \
 	while((condition)) \
-		if(_i2c_timeout-- == 0) {(err_var) = i2c_get_busy_error(); break;} \
+		if(to-- == 0) {(err_var) = i2c_get_busy_error(); break;} \
 } while(0)
 
 
@@ -183,6 +185,9 @@ i2c_err_t i2c_init(i2c_device_t *dev)
 	// Limit the input regb to between 1-4
 	if(dev->regb == 0) dev->regb = 1;
 	if(dev->regb  > 4) dev->regb = 4;
+
+	// Set the timeout variable. WARN: 0, or undefined value desables the timout
+	_i2c_timeout = dev->tout;
 
 	// Toggle the I2C Reset bit to init Registers
 	RCC->APB1PRSTR |=  RCC_APB1Periph_I2C1;
@@ -452,3 +457,70 @@ i2c_err_t i2c_write_reg(const i2c_device_t *dev,    const uint32_t reg,
 
 	return i2c_ret;
 }
+
+
+i2c_err_t i2c_read_reg_delay(const i2c_device_t *dev,     const uint32_t reg,
+                                                          uint8_t *buf,
+                                                          const size_t len,
+					                                      const size_t delay)
+{
+	// Wait for the I2C Bus to be Available
+	i2c_err_t i2c_ret = i2c_wait();
+	
+	// Start the I2C Bus and send the Write Address byte
+	if(i2c_ret == I2C_OK) { i2c_start(); i2c_ret = i2c_send_addr(I2C_WRITE, dev); }
+
+	// Send the register byte/s - MSBFirst
+	if(i2c_ret == I2C_OK)
+	{
+		for(int8_t b = dev->regb - 1; b >= 0; b--)
+		{
+			uint8_t reg_byte = (reg >> (8 * b)) & 0xFF;
+			I2C1->DATAR = reg_byte;
+
+			I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_TXE), i2c_ret);
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) break;
+		}
+	}
+
+	// Wait for the specified amount of time
+	Delay_Ms(delay);
+
+	// Enter Read Mode
+	if(i2c_ret == I2C_OK)
+	{
+		// If the message is long enough, enable ACK messages
+		if(len > 1) I2C1->CTLR1 |= I2C_CTLR1_ACK;
+
+		// Send a Repeated START and send the Read Address
+		i2c_start();
+		i2c_ret = i2c_send_addr(I2C_READ, dev);
+	}
+
+	// Read the data from the bus
+	if(i2c_ret == I2C_OK)
+	{
+		uint8_t cbyte = 0;
+		while(cbyte < len)
+		{
+			// If this is the last byte, send the NACK Bit
+			if(cbyte == len - 1) I2C1->CTLR1 &= ~I2C_CTLR1_ACK;
+
+			// Wait until there is data (Read Register Not Empty)
+			I2C_TIMEOUT_WAIT_FOR(!(I2C1->STAR1 & I2C_STAR1_RXNE), i2c_ret);
+			//while(!(I2C1->STAR1 & I2C_STAR1_RXNE));
+			buf[cbyte] = I2C1->DATAR;
+			++cbyte;
+
+			// Make sure no errors occured for this byte
+			if(i2c_ret != I2C_OK || (i2c_ret = i2c_error()) != I2C_OK) break;
+		}
+	}
+
+	// Signal a STOP
+	i2c_stop();
+
+	return i2c_ret;
+}
+
+

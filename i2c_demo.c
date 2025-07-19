@@ -2,7 +2,7 @@
 * Basic Example of using lib_i2c on the CH32V003 Microcontroller
 *
 *
-* Demo Version 3.1    16 July 2025 
+* Demo Version 3.2    18 July 2025 
 * See GitHub Repo for more information: 
 * https://github.com/ADBeta/CH32V003_lib_i2c
 *
@@ -52,12 +52,14 @@ int main()
 	// * Address Type                 (7bit or 10bit)
 	// * Address Value                (1 Byte for 7bit, 2 Bytes for 10bit)
 	// * Register Bytes               (1, 2, 3 & 4 bytes supported)
+	// * Timeout Count                (Number of clock cycles to wait for clock stretching)
 	// NOTE: This demo example is using a DS3231 RTC
 	i2c_device_t dev = {
 		.clkr = I2C_CLK_400KHZ,
 		.type = I2C_ADDR_10BIT,
 		.addr = 0x68,
 		.regb = 1,
+		.tout = 2000,
 	};
 
 	// Initialise the I2C Interface
@@ -69,7 +71,7 @@ int main()
 	Delay_Ms(100);
 
 	// Scan the I2C Bus, prints any devices that respond
-	printf("----Scanning I2C Bus for Devices---\n");
+	printf("----Scanning I2C Bus for Devices----\n");
 	i2c_scan(i2c_scan_callback);
 	printf("----Done Scanning----\n\n");
 
