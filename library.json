@@ -1,0 +1,26 @@
+{
+  "name": "CH32V003_lib_i2c",
+  "version": "5.4.0",
+  "description": "Easy to use and efficient I2C Library for the CH32V00x Series of MCUs",
+  "keywords": "i2c, ch32, ch32v003, ch32fun",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/mattybigback/CH32V003_lib_i2c.git"
+  },
+  "authors":
+  [
+    {
+      "name": "ADBeta",
+      "url": "https://github.com/ADBeta"
+    },
+    {
+      "name": "Andrew Smith",
+      "url": "https://www.andrew-smith/contact",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "frameworks": "ch32v003fun",
+  "platforms": "ch32v"
+}
